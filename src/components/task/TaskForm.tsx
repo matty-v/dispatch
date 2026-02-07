@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { Label } from '@/components/ui/Label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
+import { SchedulePicker } from '@/components/task/SchedulePicker'
 import { useCreateTask } from '@/hooks/use-tasks'
 import type { TaskType } from '@/lib/types'
 
@@ -87,15 +88,7 @@ export function TaskForm({ open, onClose }: TaskFormProps) {
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="schedule">Schedule</Label>
-            <Input
-              id="schedule"
-              value={schedule}
-              onChange={(e) => setSchedule(e.target.value)}
-              placeholder='e.g., "Daily 2 AM MT" or "Feb 21 2026"'
-            />
-          </div>
+          <SchedulePicker type={type} value={schedule} onChange={setSchedule} />
 
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
