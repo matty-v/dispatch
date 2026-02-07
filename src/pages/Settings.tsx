@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
-import { getSheetsConfig, saveSheetsConfig, clearSheetsConfig, createSheetsClient } from '@/lib/tasks-api'
+import { getSheetsConfig, saveSheetsConfig, clearSheetsConfig, createSheetsClient, DEFAULT_BASE_URL } from '@/lib/tasks-api'
 
 export function Settings() {
   const [baseUrl, setBaseUrl] = useState('')
@@ -18,6 +18,8 @@ export function Settings() {
     if (config) {
       setBaseUrl(config.baseUrl)
       setSpreadsheetId(config.spreadsheetId)
+    } else if (DEFAULT_BASE_URL) {
+      setBaseUrl(DEFAULT_BASE_URL)
     }
   }, [])
 
@@ -102,6 +104,13 @@ export function Settings() {
               onChange={(e) => setSpreadsheetId(e.target.value)}
               placeholder="your-spreadsheet-id"
             />
+            <p className="text-xs text-muted-foreground">
+              Share your Google Sheet with{' '}
+              <code className="rounded bg-white/5 px-1 py-0.5 text-[#00d4ff]">
+                sheets-db-api@kinetic-object-322814.iam.gserviceaccount.com
+              </code>{' '}
+              (Editor) for Dispatch to read and write data.
+            </p>
           </div>
 
           {testStatus !== 'idle' && (

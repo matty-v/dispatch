@@ -7,8 +7,10 @@ const STORAGE_KEYS = {
   spreadsheetId: 'dispatch_sheets_spreadsheet_id',
 } as const
 
+export const DEFAULT_BASE_URL = import.meta.env.VITE_SHEETSDB_BASE_URL || ''
+
 export function getSheetsConfig(): { baseUrl: string; spreadsheetId: string } | null {
-  const baseUrl = localStorage.getItem(STORAGE_KEYS.baseUrl)
+  const baseUrl = localStorage.getItem(STORAGE_KEYS.baseUrl) || DEFAULT_BASE_URL
   const spreadsheetId = localStorage.getItem(STORAGE_KEYS.spreadsheetId)
   if (!baseUrl || !spreadsheetId) return null
   return { baseUrl, spreadsheetId }

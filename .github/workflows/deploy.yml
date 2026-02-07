@@ -20,6 +20,8 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          VITE_SHEETSDB_BASE_URL: ${{ vars.VITE_SHEETSDB_BASE_URL }}
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
