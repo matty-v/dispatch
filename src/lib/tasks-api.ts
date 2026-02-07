@@ -24,6 +24,27 @@ export function isConfigured(): boolean {
   return !!getSpreadsheetId()
 }
 
+const SHEET_COLUMNS: string[] = [
+  'id', 'name', 'type', 'status', 'schedule', 'description',
+  'nextRun', 'lastRun', 'lastResult', 'createdAt', 'updatedAt',
+]
+
+export async function initializeSheets(spreadsheetId: string): Promise<void> {
+  const client = new SheetsDbClient({ baseUrl: API_BASE_URL, spreadsheetId })
+  await client.health()
+
+  const existingSheets = await client.listSheets()
+  const existingNames = existingSheets.map((s) => s.title)
+
+  if (!existingNames.includes(SHEET_NAME)) {
+    await client.createSheet(SHEET_NAME)
+    const placeholderData: Record<string, string> = {}
+    SHEET_COLUMNS.forEach((col) => { placeholderData[col] = '' })
+    const { rowIndex } = await client.createRow(SHEET_NAME, placeholderData)
+    await client.deleteRow(SHEET_NAME, rowIndex)
+  }
+}
+
 export function createSheetsClient(): SheetsDbClient | null {
   const spreadsheetId = getSpreadsheetId()
   if (!spreadsheetId) return null

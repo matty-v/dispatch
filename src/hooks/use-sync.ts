@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { processSyncQueue, pullFromRemote } from '@/lib/sync'
 import { isConfigured } from '@/lib/tasks-api'
@@ -20,7 +20,7 @@ export function useSync() {
   const isConnected = isConfigured()
 
   const sync = useCallback(async () => {
-    if (!isConnected) return
+    if (!isConfigured()) return
 
     setState((prev) => ({ ...prev, isSyncing: true, error: null }))
 
@@ -36,7 +36,18 @@ export function useSync() {
         error: err instanceof Error ? err.message : 'Sync failed',
       }))
     }
-  }, [isConnected, queryClient])
+  }, [queryClient])
+
+  // Sync on mount
+  useEffect(() => {
+    sync()
+  }, [sync])
+
+  // Auto-sync every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(sync, 30000)
+    return () => clearInterval(interval)
+  }, [sync])
 
   return {
     ...state,

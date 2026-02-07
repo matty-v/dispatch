@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
-import { getSpreadsheetId, saveSpreadsheetId, clearSpreadsheetId, createSheetsClient, SERVICE_ACCOUNT_EMAIL } from '@/lib/tasks-api'
+import { getSpreadsheetId, saveSpreadsheetId, clearSpreadsheetId, initializeSheets, SERVICE_ACCOUNT_EMAIL } from '@/lib/tasks-api'
 
 export function Settings() {
   const [savedId, setSavedId] = useState(() => getSpreadsheetId() || '')
@@ -28,10 +28,8 @@ export function Settings() {
     setStatusMessage('')
 
     try {
+      await initializeSheets(id)
       saveSpreadsheetId(id)
-      const client = createSheetsClient()
-      if (!client) throw new Error('Failed to create client')
-      await client.health()
 
       setSavedId(id)
       setIsEditing(false)
@@ -39,7 +37,6 @@ export function Settings() {
       setStatus('success')
       setStatusMessage('Connected successfully')
     } catch (err) {
-      clearSpreadsheetId()
       setStatus('error')
       setStatusMessage(err instanceof Error ? err.message : 'Connection failed')
     }
