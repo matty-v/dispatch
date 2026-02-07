@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Label } from '@/components/ui/Label'
 import { Badge } from '@/components/ui/Badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
+import { SchedulePicker } from '@/components/task/SchedulePicker'
 import { useUpdateTask, useDeleteTask } from '@/hooks/use-tasks'
 import type { DispatchTask, TaskStatus, TaskType } from '@/lib/types'
 
@@ -122,10 +123,7 @@ function TaskDetailInner({ task, onClose }: { task: DispatchTask; onClose: () =>
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="edit-schedule">Schedule</Label>
-            <Input id="edit-schedule" value={schedule} onChange={(e) => setSchedule(e.target.value)} />
-          </div>
+          <SchedulePicker type={type} value={schedule} onChange={setSchedule} />
 
           <div className="space-y-2">
             <Label htmlFor="edit-description">Description</Label>
