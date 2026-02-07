@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { ArrowLeft, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { ArrowLeft, CheckCircle, XCircle, Loader2, ExternalLink } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -8,57 +8,65 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { getSpreadsheetId, saveSpreadsheetId, clearSpreadsheetId, createSheetsClient, SERVICE_ACCOUNT_EMAIL } from '@/lib/tasks-api'
 
 export function Settings() {
-  const [spreadsheetId, setSpreadsheetId] = useState('')
-  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
-  const [testMessage, setTestMessage] = useState('')
+  const [savedId, setSavedId] = useState(() => getSpreadsheetId() || '')
+  const [isEditing, setIsEditing] = useState(() => !getSpreadsheetId())
+  const [inputValue, setInputValue] = useState('')
+  const [status, setStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
+  const [statusMessage, setStatusMessage] = useState('')
 
-  useEffect(() => {
-    const id = getSpreadsheetId()
-    if (id) {
-      setSpreadsheetId(id)
-    }
-  }, [])
+  const isConnected = !!savedId
 
-  const handleSave = () => {
-    saveSpreadsheetId(spreadsheetId.trim())
-    setTestStatus('idle')
-  }
-
-  const handleClear = () => {
-    clearSpreadsheetId()
-    setSpreadsheetId('')
-    setTestStatus('idle')
-    setTestMessage('')
-  }
-
-  const handleTest = async () => {
-    if (!spreadsheetId.trim()) {
-      setTestStatus('error')
-      setTestMessage('Please enter a Spreadsheet ID')
+  const handleSave = async () => {
+    const id = inputValue.trim()
+    if (!id) {
+      setStatus('error')
+      setStatusMessage('Please enter a Spreadsheet ID')
       return
     }
 
-    saveSpreadsheetId(spreadsheetId.trim())
-    setTestStatus('testing')
+    setStatus('saving')
+    setStatusMessage('')
 
     try {
+      saveSpreadsheetId(id)
       const client = createSheetsClient()
       if (!client) throw new Error('Failed to create client')
-      const result = await client.health()
-      if (result.status === 'ok') {
-        setTestStatus('success')
-        setTestMessage('Connected successfully')
-      } else {
-        setTestStatus('error')
-        setTestMessage('Unexpected response')
-      }
+      await client.health()
+
+      setSavedId(id)
+      setIsEditing(false)
+      setInputValue('')
+      setStatus('success')
+      setStatusMessage('Connected successfully')
     } catch (err) {
-      setTestStatus('error')
-      setTestMessage(err instanceof Error ? err.message : 'Connection failed')
+      clearSpreadsheetId()
+      setStatus('error')
+      setStatusMessage(err instanceof Error ? err.message : 'Connection failed')
     }
   }
 
-  const isConnected = getSpreadsheetId() !== null
+  const handleDisconnect = () => {
+    clearSpreadsheetId()
+    setSavedId('')
+    setIsEditing(true)
+    setInputValue('')
+    setStatus('idle')
+    setStatusMessage('')
+  }
+
+  const handleStartEditing = () => {
+    setInputValue(savedId)
+    setIsEditing(true)
+    setStatus('idle')
+    setStatusMessage('')
+  }
+
+  const handleCancel = () => {
+    setIsEditing(false)
+    setInputValue('')
+    setStatus('idle')
+    setStatusMessage('')
+  }
 
   return (
     <div className="max-w-lg mx-auto">
@@ -81,59 +89,86 @@ export function Settings() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="spreadsheetId">Spreadsheet ID</Label>
-            <Input
-              id="spreadsheetId"
-              value={spreadsheetId}
-              onChange={(e) => setSpreadsheetId(e.target.value)}
-              placeholder="your-spreadsheet-id"
-            />
-            <p className="text-xs text-muted-foreground">
-              Share your Google Sheet with{' '}
-              <code className="rounded bg-white/5 px-1 py-0.5 text-[#00d4ff]">
-                {SERVICE_ACCOUNT_EMAIL}
-              </code>{' '}
-              (Editor) for Dispatch to read and write data.
-            </p>
-          </div>
+          {isEditing ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="spreadsheetId">Spreadsheet ID</Label>
+                <Input
+                  id="spreadsheetId"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="your-spreadsheet-id"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Share your Google Sheet with{' '}
+                  <code className="rounded bg-white/5 px-1 py-0.5 text-[#00d4ff]">
+                    {SERVICE_ACCOUNT_EMAIL}
+                  </code>{' '}
+                  (Editor) for Dispatch to read and write data.
+                </p>
+              </div>
 
-          {testStatus !== 'idle' && (
-            <div className="flex items-center gap-2 text-sm">
-              {testStatus === 'testing' && (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin text-[#00d4ff]" />
-                  <span className="text-muted-foreground">Testing connection...</span>
-                </>
+              {status !== 'idle' && (
+                <div className="flex items-center gap-2 text-sm">
+                  {status === 'saving' && (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin text-[#00d4ff]" />
+                      <span className="text-muted-foreground">Connecting...</span>
+                    </>
+                  )}
+                  {status === 'error' && (
+                    <>
+                      <XCircle className="h-4 w-4 text-pink-400" />
+                      <span className="text-pink-400">{statusMessage}</span>
+                    </>
+                  )}
+                </div>
               )}
-              {testStatus === 'success' && (
-                <>
+
+              <div className="flex gap-2 pt-2">
+                {isConnected && (
+                  <Button variant="ghost" size="sm" onClick={handleCancel}>
+                    Cancel
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  className="ml-auto"
+                  onClick={handleSave}
+                  disabled={status === 'saving' || !inputValue.trim()}
+                >
+                  {status === 'saving' ? 'Connecting...' : 'Save & Connect'}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="rounded-lg border border-emerald-400/20 bg-emerald-400/10 p-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm">
                   <CheckCircle className="h-4 w-4 text-emerald-400" />
-                  <span className="text-emerald-400">{testMessage}</span>
-                </>
-              )}
-              {testStatus === 'error' && (
-                <>
-                  <XCircle className="h-4 w-4 text-pink-400" />
-                  <span className="text-pink-400">{testMessage}</span>
-                </>
-              )}
-            </div>
-          )}
+                  <span className="text-emerald-400 font-medium">Connected</span>
+                </div>
+                <a
+                  href={`https://docs.google.com/spreadsheets/d/${savedId}/edit`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-sm text-[#a78bfa] hover:text-[#00d4ff] underline transition-colors"
+                >
+                  Open Spreadsheet
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
 
-          <div className="flex justify-between pt-2">
-            <Button variant="ghost" size="sm" onClick={handleClear}>
-              Disconnect
-            </Button>
-            <div className="flex gap-2">
-              <Button variant="secondary" size="sm" onClick={handleTest}>
-                Test
-              </Button>
-              <Button size="sm" onClick={handleSave}>
-                Save
-              </Button>
-            </div>
-          </div>
+              <div className="flex justify-between pt-2">
+                <Button variant="ghost" size="sm" onClick={handleDisconnect}>
+                  Disconnect
+                </Button>
+                <Button variant="secondary" size="sm" onClick={handleStartEditing}>
+                  Change Spreadsheet
+                </Button>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>
