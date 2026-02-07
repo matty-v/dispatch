@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { processSyncQueue, pullFromRemote } from '@/lib/sync'
-import { getSheetsConfig } from '@/lib/tasks-api'
+import { isConfigured } from '@/lib/tasks-api'
 
 interface SyncState {
   isSyncing: boolean
@@ -17,7 +17,7 @@ export function useSync() {
     error: null,
   })
 
-  const isConnected = getSheetsConfig() !== null
+  const isConnected = isConfigured()
 
   const sync = useCallback(async () => {
     if (!isConnected) return

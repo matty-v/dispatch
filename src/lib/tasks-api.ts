@@ -2,34 +2,32 @@ import { SheetsDbClient } from '@/services/sheetsdb'
 
 const SHEET_NAME = 'Cron'
 
-const STORAGE_KEYS = {
-  baseUrl: 'dispatch_sheets_base_url',
-  spreadsheetId: 'dispatch_sheets_spreadsheet_id',
-} as const
+export const API_BASE_URL = 'https://sheetsapi-g56q77hy2a-uc.a.run.app'
 
-export const DEFAULT_BASE_URL = import.meta.env.VITE_SHEETSDB_BASE_URL || ''
+export const SERVICE_ACCOUNT_EMAIL = 'sheets-db-api@kinetic-object-322814.iam.gserviceaccount.com'
 
-export function getSheetsConfig(): { baseUrl: string; spreadsheetId: string } | null {
-  const baseUrl = localStorage.getItem(STORAGE_KEYS.baseUrl) || DEFAULT_BASE_URL
-  const spreadsheetId = localStorage.getItem(STORAGE_KEYS.spreadsheetId)
-  if (!baseUrl || !spreadsheetId) return null
-  return { baseUrl, spreadsheetId }
+const STORAGE_KEY_SPREADSHEET_ID = 'dispatch_sheets_spreadsheet_id'
+
+export function getSpreadsheetId(): string | null {
+  return localStorage.getItem(STORAGE_KEY_SPREADSHEET_ID)
 }
 
-export function saveSheetsConfig(baseUrl: string, spreadsheetId: string): void {
-  localStorage.setItem(STORAGE_KEYS.baseUrl, baseUrl)
-  localStorage.setItem(STORAGE_KEYS.spreadsheetId, spreadsheetId)
+export function saveSpreadsheetId(spreadsheetId: string): void {
+  localStorage.setItem(STORAGE_KEY_SPREADSHEET_ID, spreadsheetId)
 }
 
-export function clearSheetsConfig(): void {
-  localStorage.removeItem(STORAGE_KEYS.baseUrl)
-  localStorage.removeItem(STORAGE_KEYS.spreadsheetId)
+export function clearSpreadsheetId(): void {
+  localStorage.removeItem(STORAGE_KEY_SPREADSHEET_ID)
+}
+
+export function isConfigured(): boolean {
+  return !!getSpreadsheetId()
 }
 
 export function createSheetsClient(): SheetsDbClient | null {
-  const config = getSheetsConfig()
-  if (!config) return null
-  return new SheetsDbClient(config)
+  const spreadsheetId = getSpreadsheetId()
+  if (!spreadsheetId) return null
+  return new SheetsDbClient({ baseUrl: API_BASE_URL, spreadsheetId })
 }
 
 export function getTasksSheet() {

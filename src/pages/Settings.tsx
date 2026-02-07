@@ -5,45 +5,40 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
-import { getSheetsConfig, saveSheetsConfig, clearSheetsConfig, createSheetsClient, DEFAULT_BASE_URL } from '@/lib/tasks-api'
+import { getSpreadsheetId, saveSpreadsheetId, clearSpreadsheetId, createSheetsClient, SERVICE_ACCOUNT_EMAIL } from '@/lib/tasks-api'
 
 export function Settings() {
-  const [baseUrl, setBaseUrl] = useState('')
   const [spreadsheetId, setSpreadsheetId] = useState('')
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
   const [testMessage, setTestMessage] = useState('')
 
   useEffect(() => {
-    const config = getSheetsConfig()
-    if (config) {
-      setBaseUrl(config.baseUrl)
-      setSpreadsheetId(config.spreadsheetId)
-    } else if (DEFAULT_BASE_URL) {
-      setBaseUrl(DEFAULT_BASE_URL)
+    const id = getSpreadsheetId()
+    if (id) {
+      setSpreadsheetId(id)
     }
   }, [])
 
   const handleSave = () => {
-    saveSheetsConfig(baseUrl.trim(), spreadsheetId.trim())
+    saveSpreadsheetId(spreadsheetId.trim())
     setTestStatus('idle')
   }
 
   const handleClear = () => {
-    clearSheetsConfig()
-    setBaseUrl('')
+    clearSpreadsheetId()
     setSpreadsheetId('')
     setTestStatus('idle')
     setTestMessage('')
   }
 
   const handleTest = async () => {
-    if (!baseUrl.trim() || !spreadsheetId.trim()) {
+    if (!spreadsheetId.trim()) {
       setTestStatus('error')
-      setTestMessage('Please fill in both fields')
+      setTestMessage('Please enter a Spreadsheet ID')
       return
     }
 
-    saveSheetsConfig(baseUrl.trim(), spreadsheetId.trim())
+    saveSpreadsheetId(spreadsheetId.trim())
     setTestStatus('testing')
 
     try {
@@ -63,7 +58,7 @@ export function Settings() {
     }
   }
 
-  const isConnected = getSheetsConfig() !== null
+  const isConnected = getSpreadsheetId() !== null
 
   return (
     <div className="max-w-lg mx-auto">
@@ -87,16 +82,6 @@ export function Settings() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="baseUrl">SheetsDB API URL</Label>
-            <Input
-              id="baseUrl"
-              value={baseUrl}
-              onChange={(e) => setBaseUrl(e.target.value)}
-              placeholder="https://your-sheetsdb-api.com"
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="spreadsheetId">Spreadsheet ID</Label>
             <Input
               id="spreadsheetId"
@@ -107,7 +92,7 @@ export function Settings() {
             <p className="text-xs text-muted-foreground">
               Share your Google Sheet with{' '}
               <code className="rounded bg-white/5 px-1 py-0.5 text-[#00d4ff]">
-                sheets-db-api@kinetic-object-322814.iam.gserviceaccount.com
+                {SERVICE_ACCOUNT_EMAIL}
               </code>{' '}
               (Editor) for Dispatch to read and write data.
             </p>
